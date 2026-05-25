@@ -168,6 +168,13 @@ npm run dev
 
 ---
 
+## Live Demo
+
+Frontend: https://your-vercel-link.vercel.app
+
+Backend API:
+https://socialapp-backend-acv1.onrender.com
+
 ## 🤝 Contributing
 
 Contributions are welcome!  
