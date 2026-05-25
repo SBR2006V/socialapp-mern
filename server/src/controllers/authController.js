@@ -42,6 +42,8 @@ const registerUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        followers: user.followers,
+        following: user.following,
       },
     });
   } catch (error) {
@@ -82,6 +84,10 @@ const loginUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        bio: user.bio,
+        profilePic: user.profilePic,
+        followers: user.followers,
+        following: user.following,
       },
     });
   } catch (error) {
@@ -92,13 +98,13 @@ const loginUser = async (req, res) => {
 };
 
 // Follow / Unfollow User
-const followUser = async (req, res) => {
+const toggleFollow = async (req, res) => {
   try {
     const currentUserId = req.user._id.toString();
 
     const targetUserId = req.params.id;
 
-    // Prevent self follow
+    // Prevent self-follow
     if (currentUserId === targetUserId) {
       return res.status(400).json({
         message: "You cannot follow yourself",
@@ -109,7 +115,7 @@ const followUser = async (req, res) => {
 
     const targetUser = await User.findById(targetUserId);
 
-    if (!targetUser) {
+    if (!currentUser || !targetUser) {
       return res.status(404).json({
         message: "User not found",
       });
@@ -130,11 +136,11 @@ const followUser = async (req, res) => {
       );
 
       await currentUser.save();
-
       await targetUser.save();
 
       return res.status(200).json({
         message: "User unfollowed",
+        following: false,
       });
     }
 
@@ -144,11 +150,11 @@ const followUser = async (req, res) => {
     targetUser.followers.push(currentUserId);
 
     await currentUser.save();
-
     await targetUser.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "User followed",
+      following: true,
     });
   } catch (error) {
     res.status(500).json({
@@ -160,5 +166,5 @@ const followUser = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
-  followUser,
+  toggleFollow,
 };
