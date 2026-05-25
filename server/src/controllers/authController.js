@@ -91,7 +91,74 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Follow / Unfollow User
+const followUser = async (req, res) => {
+  try {
+    const currentUserId = req.user._id.toString();
+
+    const targetUserId = req.params.id;
+
+    // Prevent self follow
+    if (currentUserId === targetUserId) {
+      return res.status(400).json({
+        message: "You cannot follow yourself",
+      });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+
+    const targetUser = await User.findById(targetUserId);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const isFollowing = currentUser.following.some(
+      (id) => id.toString() === targetUserId,
+    );
+
+    if (isFollowing) {
+      // Unfollow
+      currentUser.following = currentUser.following.filter(
+        (id) => id.toString() !== targetUserId,
+      );
+
+      targetUser.followers = targetUser.followers.filter(
+        (id) => id.toString() !== currentUserId,
+      );
+
+      await currentUser.save();
+
+      await targetUser.save();
+
+      return res.status(200).json({
+        message: "User unfollowed",
+      });
+    }
+
+    // Follow
+    currentUser.following.push(targetUserId);
+
+    targetUser.followers.push(currentUserId);
+
+    await currentUser.save();
+
+    await targetUser.save();
+
+    res.status(200).json({
+      message: "User followed",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  followUser,
 };

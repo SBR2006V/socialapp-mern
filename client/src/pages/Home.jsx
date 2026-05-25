@@ -20,11 +20,16 @@ function Home() {
     setCommentText,
   ] = useState({});
 
+  const [
+    followingUsers,
+    setFollowingUsers,
+  ] = useState([]);
+
   const storedUser =
     JSON.parse(
       localStorage.getItem(
-        "user"
-      )
+        "user",
+      ),
     );
 
   const currentUserId =
@@ -36,25 +41,32 @@ function Home() {
       try {
         const res =
           await API.get(
-            "/api/posts"
+            "/api/posts",
           );
 
         setPosts(
-          res.data
+          res.data,
         );
       } catch (error) {
         console.log(
-          error
+          error,
         );
 
         toast.error(
-          "Failed to load posts"
+          "Failed to load posts",
         );
       }
     };
 
   useEffect(() => {
     fetchPosts();
+
+    if (storedUser) {
+      setFollowingUsers(
+        storedUser.following ||
+          [],
+      );
+    }
   }, []);
 
   // Create Post
@@ -66,7 +78,7 @@ function Home() {
           !image
         ) {
           return toast.error(
-            "Post cannot be empty"
+            "Post cannot be empty",
           );
         }
 
@@ -75,7 +87,7 @@ function Home() {
 
         if (!token) {
           return toast.error(
-            "Login first"
+            "Login first",
           );
         }
 
@@ -86,13 +98,13 @@ function Home() {
 
         formData.append(
           "content",
-          content
+          content,
         );
 
         if (image) {
           formData.append(
             "image",
-            image
+            image,
           );
         }
 
@@ -104,38 +116,37 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
 
-        // Add new post instantly
         setPosts(
           (prev) => [
             res.data,
             ...prev,
-          ]
+          ],
         );
 
         toast.success(
-          "Post created"
+          "Post created",
         );
 
         setContent("");
         setImage(null);
 
         document.getElementById(
-          "image-upload"
+          "image-upload",
         ).value = "";
       } catch (error) {
         console.log(
           error.response
-            ?.data
+            ?.data,
         );
 
         toast.error(
           error.response
             ?.data
             ?.message ||
-            "Failed to create post"
+            "Failed to create post",
         );
       } finally {
         setLoading(false);
@@ -145,17 +156,11 @@ function Home() {
   // Like / Unlike
   const handleLike =
     async (
-      postId
+      postId,
     ) => {
       try {
         const token =
           storedUser?.token;
-
-        if (!token) {
-          return toast.error(
-            "Login first"
-          );
-        }
 
         const res =
           await API.put(
@@ -165,14 +170,14 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
 
         setPosts(
           (prev) =>
             prev.map(
               (
-                post
+                post,
               ) =>
                 post._id ===
                 postId
@@ -183,34 +188,24 @@ function Home() {
                           .data
                           .likes,
                     }
-                  : post
-            )
+                  : post,
+            ),
         );
       } catch (error) {
-        console.log(
-          error
-        );
-
         toast.error(
-          "Failed to like post"
+          "Failed to like post",
         );
       }
     };
 
-  // Add Comment
+  // Comment
   const handleComment =
     async (
-      postId
+      postId,
     ) => {
       try {
         const token =
           storedUser?.token;
-
-        if (!token) {
-          return toast.error(
-            "Login first"
-          );
-        }
 
         const text =
           commentText[
@@ -221,7 +216,7 @@ function Home() {
           !text?.trim()
         ) {
           return toast.error(
-            "Comment cannot be empty"
+            "Comment cannot be empty",
           );
         }
 
@@ -233,44 +228,91 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
 
-        // Update post instantly
         setPosts(
           (prev) =>
             prev.map(
               (
-                post
+                post,
               ) =>
                 post._id ===
                 postId
                   ? res.data
-                  : post
-            )
+                  : post,
+            ),
         );
 
-        // Clear comment box
         setCommentText(
           (
-            prev
+            prev,
           ) => ({
             ...prev,
             [postId]:
               "",
-          })
-        );
-
-        toast.success(
-          "Comment added"
+          }),
         );
       } catch (error) {
-        console.log(
-          error
+        toast.error(
+          "Failed to comment",
+        );
+      }
+    };
+
+  // Follow / Unfollow
+  const handleFollow =
+    async (
+      userId,
+    ) => {
+      try {
+        const token =
+          storedUser?.token;
+
+        await API.put(
+          `/api/auth/${userId}/follow`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
         );
 
+        const isFollowing =
+          followingUsers.includes(
+            userId,
+          );
+
+        const updated =
+          isFollowing
+            ? followingUsers.filter(
+                (
+                  id,
+                ) =>
+                  id !==
+                  userId,
+              )
+            : [
+                ...followingUsers,
+                userId,
+              ];
+
+        setFollowingUsers(
+          updated,
+        );
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...storedUser,
+            following:
+              updated,
+          }),
+        );
+      } catch (error) {
         toast.error(
-          "Failed to add comment"
+          "Failed to follow user",
         );
       }
     };
@@ -288,22 +330,21 @@ function Home() {
             placeholder="What's on your mind?"
             value={content}
             onChange={(
-              e
+              e,
             ) =>
               setContent(
                 e.target
-                  .value
+                  .value,
               )
             }
             className="w-full border rounded-xl p-4 outline-none resize-none"
             rows="4"
           />
 
-          {/* Image Upload */}
-          <div className="mt-4 flex flex-wrap items-center gap-4">
+          <div className="mt-4 flex items-center gap-4">
             <label
               htmlFor="image-upload"
-              className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-xl font-medium transition"
+              className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-xl"
             >
               📷 Choose Image
             </label>
@@ -312,27 +353,22 @@ function Home() {
               id="image-upload"
               type="file"
               accept="image/*"
+              className="hidden"
               onChange={(
-                e
+                e,
               ) =>
                 setImage(
-                  e
-                    .target
-                    .files[0]
+                  e.target
+                    .files[0],
                 )
               }
-              className="hidden"
             />
 
-            {image ? (
-              <span className="text-sm text-gray-600 truncate max-w-[250px]">
+            {image && (
+              <span className="text-sm">
                 {
                   image.name
                 }
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">
-                No image selected
               </span>
             )}
           </div>
@@ -344,7 +380,7 @@ function Home() {
             disabled={
               loading
             }
-            className="mt-5 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="mt-5 bg-blue-600 text-white px-6 py-3 rounded-xl"
           >
             {loading
               ? "Posting..."
@@ -354,183 +390,194 @@ function Home() {
 
         {/* Posts */}
         <div className="space-y-6">
-          {posts.length ===
-          0 ? (
-            <p className="text-center text-gray-500">
-              No posts yet
-            </p>
-          ) : (
-            posts.map(
-              (
-                post
-              ) => {
-                const isLiked =
-                  post.likes?.includes(
-                    currentUserId
-                  );
+          {posts.map(
+            (
+              post,
+            ) => {
+              const isLiked =
+                post.likes?.includes(
+                  currentUserId,
+                );
 
-                return (
-                  <div
-                    key={
-                      post._id
-                    }
-                    className="bg-white p-6 rounded-2xl shadow-md"
-                  >
-                    {/* Username */}
-                    <h2 className="font-bold text-lg mb-2">
+              const isFollowing =
+                followingUsers.includes(
+                  post.user
+                    ?._id,
+                );
+
+              return (
+                <div
+                  key={
+                    post._id
+                  }
+                  className="bg-white p-6 rounded-2xl shadow-md"
+                >
+                  {/* Username + Follow */}
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="font-bold text-lg">
                       {post
                         .user
                         ?.username ||
                         "Unknown User"}
                     </h2>
 
-                    {/* Content */}
-                    {post.content && (
-                      <p className="text-gray-700 mt-2">
-                        {
-                          post.content
-                        }
-                      </p>
-                    )}
-
-                    {/* Image */}
-                    {post.image && (
-                      <img
-                        src={
-                          post.image
-                        }
-                        alt="Post"
-                        className="mt-4 rounded-2xl w-full max-h-[500px] object-cover"
-                      />
-                    )}
-
-                    {/* Like */}
-                    <div className="mt-4 flex items-center gap-3">
+                    {post.user
+                      ?._id !==
+                      currentUserId && (
                       <button
                         onClick={() =>
-                          handleLike(
-                            post._id
+                          handleFollow(
+                            post
+                              .user
+                              ._id,
                           )
                         }
-                        className="text-2xl hover:scale-110 transition"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium ${
+                          isFollowing
+                            ? "bg-gray-300"
+                            : "bg-blue-600 text-white"
+                        }`}
                       >
-                        {isLiked
-                          ? "❤️"
-                          : "🤍"}
+                        {isFollowing
+                          ? "Following"
+                          : "Follow"}
                       </button>
-
-                      <span className="text-gray-600 font-medium">
-                        {
-                          post
-                            .likes
-                            ?.length
-                        }{" "}
-                        Likes
-                      </span>
-                    </div>
-
-                    {/* Comments */}
-                    <div className="mt-5 border-t pt-4">
-                      <p className="font-semibold text-gray-700 mb-3">
-                        💬{" "}
-                        {post
-                          .comments
-                          ?.length ||
-                          0}{" "}
-                        Comments
-                      </p>
-
-                      {/* Comment List */}
-                      <div className="space-y-2 mb-4">
-                        {post
-                          .comments
-                          ?.length >
-                        0 ? (
-                          post.comments.map(
-                            (
-                              comment,
-                              index
-                            ) => (
-                              <div
-                                key={
-                                  index
-                                }
-                                className="bg-gray-100 p-3 rounded-xl"
-                              >
-                                <span className="font-semibold">
-                                  {comment
-                                    .user
-                                    ?.username ||
-                                    "User"}
-                                  :
-                                </span>{" "}
-                                {
-                                  comment.text
-                                }
-                              </div>
-                            )
-                          )
-                        ) : (
-                          <p className="text-sm text-gray-400">
-                            No comments yet
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Add Comment */}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Add a comment..."
-                          value={
-                            commentText[
-                              post
-                                ._id
-                            ] ||
-                            ""
-                          }
-                          onChange={(
-                            e
-                          ) =>
-                            setCommentText(
-                              (
-                                prev
-                              ) => ({
-                                ...prev,
-                                [post
-                                  ._id]:
-                                  e
-                                    .target
-                                    .value,
-                              })
-                            )
-                          }
-                          className="flex-1 border rounded-xl px-4 py-2 outline-none"
-                        />
-
-                        <button
-                          onClick={() =>
-                            handleComment(
-                              post._id
-                            )
-                          }
-                          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition"
-                        >
-                          Post
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <p className="text-sm text-gray-400 mt-4">
-                      {new Date(
-                        post.createdAt
-                      ).toLocaleString()}
-                    </p>
+                    )}
                   </div>
-                );
-              }
-            )
+
+                  {post.content && (
+                    <p className="mt-2">
+                      {
+                        post.content
+                      }
+                    </p>
+                  )}
+
+                  {post.image && (
+                    <img
+                      src={
+                        post.image
+                      }
+                      alt="Post"
+                      className="mt-4 rounded-2xl w-full"
+                    />
+                  )}
+
+                  {/* Like */}
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      onClick={() =>
+                        handleLike(
+                          post._id,
+                        )
+                      }
+                    >
+                      {isLiked
+                        ? "❤️"
+                        : "🤍"}
+                    </button>
+
+                    <span>
+                      {
+                        post
+                          .likes
+                          ?.length
+                      }{" "}
+                      Likes
+                    </span>
+                  </div>
+
+                  {/* Comments */}
+                  <div className="mt-5 border-t pt-4">
+                    <p className="font-semibold mb-3">
+                      💬{" "}
+                      {post
+                        .comments
+                        ?.length ||
+                        0}{" "}
+                      Comments
+                    </p>
+
+                    <div className="space-y-2 mb-4">
+                      {post
+                        .comments
+                        ?.map(
+                          (
+                            comment,
+                            index,
+                          ) => (
+                            <div
+                              key={
+                                index
+                              }
+                              className="bg-gray-100 p-3 rounded-xl"
+                            >
+                              <span className="font-semibold">
+                                {comment
+                                  .user
+                                  ?.username ||
+                                  "User"}
+                                :
+                              </span>{" "}
+                              {
+                                comment.text
+                              }
+                            </div>
+                          ),
+                        )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add a comment..."
+                        value={
+                          commentText[
+                            post
+                              ._id
+                          ] ||
+                          ""
+                        }
+                        onChange={(
+                          e,
+                        ) =>
+                          setCommentText(
+                            (
+                              prev,
+                            ) => ({
+                              ...prev,
+                              [post
+                                ._id]:
+                                e
+                                  .target
+                                  .value,
+                            }),
+                          )
+                        }
+                        className="flex-1 border rounded-xl px-4 py-2"
+                      />
+
+                      <button
+                        onClick={() =>
+                          handleComment(
+                            post._id,
+                          )
+                        }
+                        className="bg-blue-600 text-white px-4 rounded-xl"
+                      >
+                        Post
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-400 mt-4">
+                    {new Date(
+                      post.createdAt,
+                    ).toLocaleString()}
+                  </p>
+                </div>
+              );
+            },
           )}
         </div>
       </div>
