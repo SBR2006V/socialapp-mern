@@ -39,7 +39,7 @@ const createPost = async (req, res) => {
 const getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("user", "username profilePic followers following")
+      .populate("user", "username followers following profilePic bio")
       .populate("comments.user", "username")
       .sort({
         createdAt: -1,
