@@ -28,12 +28,12 @@ function Home() {
   const storedUser =
     JSON.parse(
       localStorage.getItem(
-        "user",
-      ),
-    );
+        "user"
+      )
+    ) || {};
 
   const currentUserId =
-    storedUser?.id;
+    storedUser?.user?.id;
 
   // Fetch Posts
   const fetchPosts =
@@ -41,19 +41,19 @@ function Home() {
       try {
         const res =
           await API.get(
-            "/api/posts",
+            "/api/posts"
           );
 
         setPosts(
-          res.data,
+          res.data
         );
       } catch (error) {
         console.log(
-          error,
+          error
         );
 
         toast.error(
-          "Failed to load posts",
+          "Failed to load posts"
         );
       }
     };
@@ -61,10 +61,11 @@ function Home() {
   useEffect(() => {
     fetchPosts();
 
-    if (storedUser) {
+    if (
+      storedUser?.following
+    ) {
       setFollowingUsers(
-        storedUser.following ||
-          [],
+        storedUser.following
       );
     }
   }, []);
@@ -78,7 +79,7 @@ function Home() {
           !image
         ) {
           return toast.error(
-            "Post cannot be empty",
+            "Post cannot be empty"
           );
         }
 
@@ -87,7 +88,7 @@ function Home() {
 
         if (!token) {
           return toast.error(
-            "Login first",
+            "Login first"
           );
         }
 
@@ -98,13 +99,13 @@ function Home() {
 
         formData.append(
           "content",
-          content,
+          content
         );
 
         if (image) {
           formData.append(
             "image",
-            image,
+            image
           );
         }
 
@@ -116,37 +117,37 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            },
+            }
           );
 
         setPosts(
           (prev) => [
             res.data,
             ...prev,
-          ],
+          ]
         );
 
         toast.success(
-          "Post created",
+          "Post created"
         );
 
         setContent("");
         setImage(null);
 
         document.getElementById(
-          "image-upload",
+          "image-upload"
         ).value = "";
       } catch (error) {
         console.log(
           error.response
-            ?.data,
+            ?.data
         );
 
         toast.error(
           error.response
             ?.data
             ?.message ||
-            "Failed to create post",
+            "Failed to create post"
         );
       } finally {
         setLoading(false);
@@ -156,7 +157,7 @@ function Home() {
   // Like / Unlike
   const handleLike =
     async (
-      postId,
+      postId
     ) => {
       try {
         const token =
@@ -170,14 +171,14 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            },
+            }
           );
 
         setPosts(
           (prev) =>
             prev.map(
               (
-                post,
+                post
               ) =>
                 post._id ===
                 postId
@@ -188,20 +189,20 @@ function Home() {
                           .data
                           .likes,
                     }
-                  : post,
-            ),
+                  : post
+            )
         );
-      } catch (error) {
+      } catch {
         toast.error(
-          "Failed to like post",
+          "Failed to like post"
         );
       }
     };
 
-  // Comment
+  // Add Comment
   const handleComment =
     async (
-      postId,
+      postId
     ) => {
       try {
         const token =
@@ -216,7 +217,7 @@ function Home() {
           !text?.trim()
         ) {
           return toast.error(
-            "Comment cannot be empty",
+            "Comment cannot be empty"
           );
         }
 
@@ -228,34 +229,34 @@ function Home() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            },
+            }
           );
 
         setPosts(
           (prev) =>
             prev.map(
               (
-                post,
+                post
               ) =>
                 post._id ===
                 postId
                   ? res.data
-                  : post,
-            ),
+                  : post
+            )
         );
 
         setCommentText(
           (
-            prev,
+            prev
           ) => ({
             ...prev,
             [postId]:
               "",
-          }),
+          })
         );
-      } catch (error) {
+      } catch {
         toast.error(
-          "Failed to comment",
+          "Failed to comment"
         );
       }
     };
@@ -263,7 +264,7 @@ function Home() {
   // Follow / Unfollow
   const handleFollow =
     async (
-      userId,
+      userId
     ) => {
       try {
         const token =
@@ -276,22 +277,22 @@ function Home() {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          },
+          }
         );
 
         const isFollowing =
           followingUsers.includes(
-            userId,
+            userId
           );
 
         const updated =
           isFollowing
             ? followingUsers.filter(
                 (
-                  id,
+                  id
                 ) =>
                   id !==
-                  userId,
+                  userId
               )
             : [
                 ...followingUsers,
@@ -299,20 +300,61 @@ function Home() {
               ];
 
         setFollowingUsers(
-          updated,
+          updated
         );
 
         localStorage.setItem(
           "user",
-          JSON.stringify({
-            ...storedUser,
-            following:
-              updated,
-          }),
+          JSON.stringify(
+            {
+              ...storedUser,
+              following:
+                updated,
+            }
+          )
         );
-      } catch (error) {
+
+        // Update UI instantly
+        setPosts(
+          (prev) =>
+            prev.map(
+              (
+                post
+              ) => {
+                if (
+                  post.user
+                    ?._id !==
+                  userId
+                )
+                  return post;
+
+                return {
+                  ...post,
+                  user: {
+                    ...post.user,
+                    followers:
+                      isFollowing
+                        ? post.user.followers.filter(
+                            (
+                              id
+                            ) =>
+                              id !==
+                              currentUserId
+                          )
+                        : [
+                            ...post
+                              .user
+                              .followers,
+                            currentUserId,
+                          ],
+                  },
+                };
+              }
+            )
+        );
+      } catch {
         toast.error(
-          "Failed to follow user",
+          "Failed to follow user"
         );
       }
     };
@@ -328,23 +370,25 @@ function Home() {
         <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
           <textarea
             placeholder="What's on your mind?"
-            value={content}
+            value={
+              content
+            }
             onChange={(
-              e,
+              e
             ) =>
               setContent(
                 e.target
-                  .value,
+                  .value
               )
             }
             className="w-full border rounded-xl p-4 outline-none resize-none"
             rows="4"
           />
 
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-4 flex items-center gap-4 flex-wrap">
             <label
               htmlFor="image-upload"
-              className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-xl"
+              className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-3 rounded-xl font-medium transition"
             >
               📷 Choose Image
             </label>
@@ -355,22 +399,20 @@ function Home() {
               accept="image/*"
               className="hidden"
               onChange={(
-                e,
+                e
               ) =>
                 setImage(
                   e.target
-                    .files[0],
+                    .files[0]
                 )
               }
             />
 
-            {image && (
-              <span className="text-sm">
-                {
-                  image.name
-                }
-              </span>
-            )}
+            <span className="text-sm text-gray-500">
+              {image
+                ? image.name
+                : "No image selected"}
+            </span>
           </div>
 
           <button
@@ -380,7 +422,7 @@ function Home() {
             disabled={
               loading
             }
-            className="mt-5 bg-blue-600 text-white px-6 py-3 rounded-xl"
+            className="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition disabled:bg-gray-400"
           >
             {loading
               ? "Posting..."
@@ -390,121 +432,152 @@ function Home() {
 
         {/* Posts */}
         <div className="space-y-6">
-          {posts.map(
-            (
-              post,
-            ) => {
-              const isLiked =
-                post.likes?.includes(
-                  currentUserId,
-                );
+          {posts.length ===
+          0 ? (
+            <p className="text-center text-gray-500">
+              No posts
+              yet
+            </p>
+          ) : (
+            posts.map(
+              (
+                post
+              ) => {
+                const isLiked =
+                  post.likes?.includes(
+                    currentUserId
+                  );
 
-              const isFollowing =
-                followingUsers.includes(
-                  post.user
-                    ?._id,
-                );
+                const isFollowing =
+                  followingUsers.includes(
+                    post
+                      .user
+                      ?._id
+                  );
 
-              return (
-                <div
-                  key={
-                    post._id
-                  }
-                  className="bg-white p-6 rounded-2xl shadow-md"
-                >
-                  {/* Username + Follow */}
-                  <div className="flex justify-between items-center mb-3">
-                    <h2 className="font-bold text-lg">
-                      {post
-                        .user
-                        ?.username ||
-                        "Unknown User"}
-                    </h2>
+                return (
+                  <div
+                    key={
+                      post._id
+                    }
+                    className="bg-white p-6 rounded-2xl shadow-md"
+                  >
+                    {/* Header */}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h2 className="font-bold text-xl">
+                          {post
+                            .user
+                            ?.username ||
+                            "Unknown User"}
+                        </h2>
 
-                    {post.user
-                      ?._id !==
-                      currentUserId && (
-                      <button
-                        onClick={() =>
-                          handleFollow(
+                        <p className="text-sm text-gray-500 mt-1">
+                          {
                             post
                               .user
-                              ._id,
+                              ?.followers
+                              ?.length ||
+                            0
+                          }{" "}
+                          Followers •{" "}
+                          {
+                            post
+                              .user
+                              ?.following
+                              ?.length ||
+                            0
+                          }{" "}
+                          Following
+                        </p>
+                      </div>
+
+                      {post
+                        .user
+                        ?._id !==
+                        currentUserId && (
+                        <button
+                          onClick={() =>
+                            handleFollow(
+                              post
+                                .user
+                                ._id
+                            )
+                          }
+                          className={`px-4 py-2 rounded-xl font-medium transition ${
+                            isFollowing
+                              ? "bg-gray-300"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}
+                        >
+                          {isFollowing
+                            ? "Following"
+                            : "Follow"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    {post.content && (
+                      <p className="mt-4 text-gray-700">
+                        {
+                          post.content
+                        }
+                      </p>
+                    )}
+
+                    {/* Image */}
+                    {post.image && (
+                      <img
+                        src={
+                          post.image
+                        }
+                        alt="Post"
+                        className="mt-4 rounded-2xl w-full max-h-[500px] object-cover"
+                      />
+                    )}
+
+                    {/* Like */}
+                    <div className="mt-5 flex items-center gap-3">
+                      <button
+                        onClick={() =>
+                          handleLike(
+                            post._id
                           )
                         }
-                        className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                          isFollowing
-                            ? "bg-gray-300"
-                            : "bg-blue-600 text-white"
-                        }`}
+                        className="text-2xl"
                       >
-                        {isFollowing
-                          ? "Following"
-                          : "Follow"}
+                        {isLiked
+                          ? "❤️"
+                          : "🤍"}
                       </button>
-                    )}
-                  </div>
 
-                  {post.content && (
-                    <p className="mt-2">
-                      {
-                        post.content
-                      }
-                    </p>
-                  )}
+                      <span className="text-gray-700">
+                        {
+                          post
+                            .likes
+                            ?.length
+                        }{" "}
+                        Likes
+                      </span>
+                    </div>
 
-                  {post.image && (
-                    <img
-                      src={
-                        post.image
-                      }
-                      alt="Post"
-                      className="mt-4 rounded-2xl w-full"
-                    />
-                  )}
+                    {/* Comments */}
+                    <div className="mt-5 border-t pt-4">
+                      <p className="font-semibold mb-3">
+                        💬{" "}
+                        {post
+                          .comments
+                          ?.length ||
+                          0}{" "}
+                        Comments
+                      </p>
 
-                  {/* Like */}
-                  <div className="mt-4 flex items-center gap-3">
-                    <button
-                      onClick={() =>
-                        handleLike(
-                          post._id,
-                        )
-                      }
-                    >
-                      {isLiked
-                        ? "❤️"
-                        : "🤍"}
-                    </button>
-
-                    <span>
-                      {
-                        post
-                          .likes
-                          ?.length
-                      }{" "}
-                      Likes
-                    </span>
-                  </div>
-
-                  {/* Comments */}
-                  <div className="mt-5 border-t pt-4">
-                    <p className="font-semibold mb-3">
-                      💬{" "}
-                      {post
-                        .comments
-                        ?.length ||
-                        0}{" "}
-                      Comments
-                    </p>
-
-                    <div className="space-y-2 mb-4">
-                      {post
-                        .comments
-                        ?.map(
+                      <div className="space-y-2 mb-4">
+                        {post.comments?.map(
                           (
                             comment,
-                            index,
+                            index
                           ) => (
                             <div
                               key={
@@ -523,61 +596,63 @@ function Home() {
                                 comment.text
                               }
                             </div>
-                          ),
+                          )
                         )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add a comment..."
+                          value={
+                            commentText[
+                              post
+                                ._id
+                            ] ||
+                            ""
+                          }
+                          onChange={(
+                            e
+                          ) =>
+                            setCommentText(
+                              (
+                                prev
+                              ) => ({
+                                ...prev,
+                                [post
+                                  ._id]:
+                                  e
+                                    .target
+                                    .value,
+                              })
+                            )
+                          }
+                          className="flex-1 border rounded-xl px-4 py-2"
+                        />
+
+                        <button
+                          onClick={() =>
+                            handleComment(
+                              post._id
+                            )
+                          }
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl transition"
+                        >
+                          Post
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Add a comment..."
-                        value={
-                          commentText[
-                            post
-                              ._id
-                          ] ||
-                          ""
-                        }
-                        onChange={(
-                          e,
-                        ) =>
-                          setCommentText(
-                            (
-                              prev,
-                            ) => ({
-                              ...prev,
-                              [post
-                                ._id]:
-                                e
-                                  .target
-                                  .value,
-                            }),
-                          )
-                        }
-                        className="flex-1 border rounded-xl px-4 py-2"
-                      />
-
-                      <button
-                        onClick={() =>
-                          handleComment(
-                            post._id,
-                          )
-                        }
-                        className="bg-blue-600 text-white px-4 rounded-xl"
-                      >
-                        Post
-                      </button>
-                    </div>
+                    {/* Date */}
+                    <p className="text-sm text-gray-400 mt-4">
+                      {new Date(
+                        post.createdAt
+                      ).toLocaleString()}
+                    </p>
                   </div>
-
-                  <p className="text-sm text-gray-400 mt-4">
-                    {new Date(
-                      post.createdAt,
-                    ).toLocaleString()}
-                  </p>
-                </div>
-              );
-            },
+                );
+              }
+            )
           )}
         </div>
       </div>
