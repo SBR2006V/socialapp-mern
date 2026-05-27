@@ -262,102 +262,103 @@ function Home() {
     };
 
   // Follow / Unfollow
-  const handleFollow =
-    async (
-      userId
-    ) => {
-      try {
-        const token =
-          storedUser?.token;
+const handleFollow = async (
+  userId
+) => {
+  try {
+    const token =
+      storedUser?.token;
 
-        await API.put(
-          `/api/auth/${userId}/follow`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const isFollowing =
-          followingUsers.includes(
-            userId
-          );
-
-        const updated =
-          isFollowing
-            ? followingUsers.filter(
-                (
-                  id
-                ) =>
-                  id !==
-                  userId
-              )
-            : [
-                ...followingUsers,
-                userId,
-              ];
-
-        setFollowingUsers(
-          updated
-        );
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(
-            {
-              ...storedUser,
-              following:
-                updated,
-            }
-          )
-        );
-
-        // Update UI instantly
-        setPosts(
-          (prev) =>
-            prev.map(
-              (
-                post
-              ) => {
-                if (
-                  post.user
-                    ?._id !==
-                  userId
-                )
-                  return post;
-
-                return {
-                  ...post,
-                  user: {
-                    ...post.user,
-                    followers:
-                      isFollowing
-                        ? post.user.followers.filter(
-                            (
-                              id
-                            ) =>
-                              id !==
-                              currentUserId
-                          )
-                        : [
-                            ...post
-                              .user
-                              .followers,
-                            currentUserId,
-                          ],
-                  },
-                };
-              }
-            )
-        );
-      } catch {
-        toast.error(
-          "Failed to follow user"
-        );
+    await API.put(
+      `/api/auth/${userId}/follow`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    };
+    );
+
+    const isFollowing =
+      followingUsers.includes(
+        userId
+      );
+
+    const updated =
+      isFollowing
+        ? followingUsers.filter(
+            (id) =>
+              id !== userId
+          )
+        : [
+            ...followingUsers,
+            userId,
+          ];
+
+    setFollowingUsers(
+      updated
+    );
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...storedUser,
+        following:
+          updated,
+      })
+    );
+
+    // Update UI instantly
+    setPosts((prev) =>
+      prev.map((post) => {
+        if (
+          post.user?._id !==
+          userId
+        ) {
+          return post;
+        }
+
+        return {
+          ...post,
+          user: {
+            ...post.user,
+
+            followers:
+              isFollowing
+                ? (
+                    post.user
+                      .followers ||
+                    []
+                  ).filter(
+                    (id) =>
+                      id !==
+                      currentUserId
+                  )
+                : [
+                    ...(
+                      post.user
+                        .followers ||
+                      []
+                    ),
+                    currentUserId,
+                  ],
+
+            following:
+              post.user
+                .following ||
+              [],
+          },
+        };
+      })
+    );
+  } catch (error) {
+    console.log(error);
+
+    toast.error(
+      "Failed to follow user"
+    );
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
