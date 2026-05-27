@@ -39,7 +39,7 @@ const createPost = async (req, res) => {
 const getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("user", "username followers following profilePic bio")
+      .populate("user", "username bio profilePic followers following")
       .populate("comments.user", "username")
       .sort({
         createdAt: -1,
@@ -47,14 +47,13 @@ const getPosts = async (req, res) => {
 
     res.status(200).json(posts);
   } catch (error) {
-    console.error(error);
+    console.error("GET POSTS ERROR:", error);
 
     res.status(500).json({
       message: error.message,
     });
   }
 };
-
 // Like / Unlike Post
 const toggleLike = async (req, res) => {
   try {
