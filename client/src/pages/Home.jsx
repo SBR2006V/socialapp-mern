@@ -8,7 +8,10 @@ function Home() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState({});
-  const [followingUsers, setFollowingUsers] = useState([]);
+  const [followingUsers, setFollowingUsers] =
+  useState(
+    storedUser?.user?.following || []
+  );
 
   const storedUser =
     JSON.parse(localStorage.getItem("user")) || {};
@@ -22,46 +25,6 @@ function Home() {
       const res = await API.get("/api/posts");
 
       setPosts(res.data);
-
-      // Sync current user's following list
-      const currentUserPost =
-        res.data.find(
-          (post) =>
-            post.user?._id ===
-            currentUserId
-        );
-
-      if (
-        currentUserPost?.user
-          ?.following
-      ) {
-        const updatedFollowing =
-          currentUserPost.user.following.map(
-            (id) =>
-              id.toString()
-          );
-
-        setFollowingUsers(
-          updatedFollowing
-        );
-
-        // Update localStorage
-        const updatedUser = {
-          ...storedUser,
-          user: {
-            ...storedUser.user,
-            following:
-              updatedFollowing,
-          },
-        };
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(
-            updatedUser
-          )
-        );
-      }
     } catch (error) {
       console.log(error);
       toast.error(
