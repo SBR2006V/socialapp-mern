@@ -16,39 +16,57 @@ function Home() {
   const currentUserId =
     storedUser?.user?.id;
 
-  // Fetch posts
+  // Fetch Posts
   const fetchPosts = async () => {
     try {
       const res = await API.get("/api/posts");
 
       setPosts(res.data);
 
-      // Sync following users from DB
-      const currentUserPost = res.data.find(
-        (post) =>
-          post.user?._id === currentUserId
-      );
-
-      if (currentUserPost?.user?.following) {
-        setFollowingUsers(
-          currentUserPost.user.following
+      // Sync current user's following list
+      const currentUserPost =
+        res.data.find(
+          (post) =>
+            post.user?._id ===
+            currentUserId
         );
+
+      if (
+        currentUserPost?.user
+          ?.following
+      ) {
+        const updatedFollowing =
+          currentUserPost.user.following.map(
+            (id) =>
+              id.toString()
+          );
+
+        setFollowingUsers(
+          updatedFollowing
+        );
+
+        // Update localStorage
+        const updatedUser = {
+          ...storedUser,
+          user: {
+            ...storedUser.user,
+            following:
+              updatedFollowing,
+          },
+        };
 
         localStorage.setItem(
           "user",
-          JSON.stringify({
-            ...storedUser,
-            user: {
-              ...storedUser.user,
-              following:
-                currentUserPost.user.following,
-            },
-          })
+          JSON.stringify(
+            updatedUser
+          )
         );
       }
     } catch (error) {
       console.log(error);
-      toast.error("Failed to load posts");
+      toast.error(
+        "Failed to load posts"
+      );
     }
   };
 
@@ -56,16 +74,20 @@ function Home() {
     fetchPosts();
   }, []);
 
-  // Create post
+  // Create Post
   const createPost = async () => {
     try {
-      if (!content.trim() && !image) {
+      if (
+        !content.trim() &&
+        !image
+      ) {
         return toast.error(
           "Post cannot be empty"
         );
       }
 
-      const token = storedUser?.token;
+      const token =
+        storedUser?.token;
 
       if (!token) {
         return toast.error(
@@ -75,7 +97,8 @@ function Home() {
 
       setLoading(true);
 
-      const formData = new FormData();
+      const formData =
+        new FormData();
 
       formData.append(
         "content",
@@ -89,22 +112,25 @@ function Home() {
         );
       }
 
-      const res = await API.post(
-        "/api/posts",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res =
+        await API.post(
+          "/api/posts",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
       setPosts((prev) => [
         res.data,
         ...prev,
       ]);
 
-      toast.success("Post created");
+      toast.success(
+        "Post created"
+      );
 
       setContent("");
       setImage(null);
@@ -114,7 +140,8 @@ function Home() {
       ).value = "";
     } catch (error) {
       toast.error(
-        error.response?.data?.message ||
+        error.response?.data
+          ?.message ||
           "Failed to create post"
       );
     } finally {
@@ -122,147 +149,180 @@ function Home() {
     }
   };
 
-  // Like
-  const handleLike = async (
-    postId
-  ) => {
-    try {
-      const token =
-        storedUser?.token;
+  // Like Post
+  const handleLike =
+    async (postId) => {
+      try {
+        const token =
+          storedUser?.token;
 
-      const res = await API.put(
-        `/api/posts/${postId}/like`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        const res =
+          await API.put(
+            `/api/posts/${postId}/like`,
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      setPosts((prev) =>
-        prev.map((post) =>
-          post._id === postId
-            ? {
-                ...post,
-                likes:
-                  res.data.likes,
-              }
-            : post
-        )
-      );
-    } catch {
-      toast.error(
-        "Failed to like post"
-      );
-    }
-  };
-
-  // Comment
-  const handleComment = async (
-    postId
-  ) => {
-    try {
-      const token =
-        storedUser?.token;
-
-      const text =
-        commentText[postId];
-
-      if (!text?.trim()) {
-        return toast.error(
-          "Comment cannot be empty"
+        setPosts((prev) =>
+          prev.map((post) =>
+            post._id ===
+            postId
+              ? {
+                  ...post,
+                  likes:
+                    res.data.likes,
+                }
+              : post
+          )
+        );
+      } catch {
+        toast.error(
+          "Failed to like post"
         );
       }
+    };
 
-      const res = await API.post(
-        `/api/posts/${postId}/comment`,
-        { text },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  // Add Comment
+  const handleComment =
+    async (postId) => {
+      try {
+        const token =
+          storedUser?.token;
+
+        const text =
+          commentText[
+            postId
+          ];
+
+        if (
+          !text?.trim()
+        ) {
+          return toast.error(
+            "Comment cannot be empty"
+          );
         }
-      );
 
-      setPosts((prev) =>
-        prev.map((post) =>
-          post._id === postId
-            ? res.data
-            : post
-        )
-      );
+        const res =
+          await API.post(
+            `/api/posts/${postId}/comment`,
+            { text },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
 
-      setCommentText((prev) => ({
-        ...prev,
-        [postId]: "",
-      }));
-    } catch {
-      toast.error(
-        "Failed to comment"
-      );
-    }
-  };
+        setPosts((prev) =>
+          prev.map((post) =>
+            post._id ===
+            postId
+              ? res.data
+              : post
+          )
+        );
+
+        setCommentText(
+          (prev) => ({
+            ...prev,
+            [postId]:
+              "",
+          })
+        );
+      } catch {
+        toast.error(
+          "Failed to comment"
+        );
+      }
+    };
 
   // Follow / Unfollow
-  const handleFollow = async (
-    userId
-  ) => {
-    try {
-      const token =
-        storedUser?.token;
+  const handleFollow =
+    async (userId) => {
+      try {
+        const token =
+          storedUser?.token;
 
-      const res = await API.put(
-        `/api/auth/${userId}/follow`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const res =
+          await API.put(
+            `/api/auth/${userId}/follow`,
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+        let updatedFollowing =
+          [
+            ...followingUsers,
+          ];
+
+        if (
+          res.data.following
+        ) {
+          // Follow
+          if (
+            !updatedFollowing.includes(
+              userId
+            )
+          ) {
+            updatedFollowing.push(
+              userId
+            );
+          }
+        } else {
+          // Unfollow
+          updatedFollowing =
+            updatedFollowing.filter(
+              (id) =>
+                id !==
+                userId
+            );
         }
-      );
 
-      const isAlreadyFollowing =
-  followingUsers.includes(
-    userId
-  );
+        setFollowingUsers(
+          updatedFollowing
+        );
 
-const updatedFollowing =
-  isAlreadyFollowing
-    ? followingUsers.filter(
-        (id) => id !== userId
-      )
-    : [
-        ...followingUsers,
-        userId,
-      ];
-
-setFollowingUsers(
-  updatedFollowing
-);
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
+        // Update localStorage
+        const updatedUser = {
           ...storedUser,
           user: {
             ...storedUser.user,
             following:
               updatedFollowing,
           },
-        })
-      );
+        };
 
-      // Fetch fresh DB data
-      await fetchPosts();
-    } catch (error) {
-      console.log(error);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(
+            updatedUser
+          )
+        );
 
-      toast.error(
-        "Failed to follow user"
-      );
-    }
-  };
+        // Refresh posts
+        await fetchPosts();
+
+        toast.success(
+          res.data.message
+        );
+      } catch (
+        error
+      ) {
+        console.log(error);
+
+        toast.error(
+          "Failed to follow user"
+        );
+      }
+    };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -276,9 +336,12 @@ setFollowingUsers(
           <textarea
             placeholder="What's on your mind?"
             value={content}
-            onChange={(e) =>
+            onChange={(
+              e
+            ) =>
               setContent(
-                e.target.value
+                e.target
+                  .value
               )
             }
             className="w-full border rounded-xl p-4 resize-none"
@@ -290,7 +353,8 @@ setFollowingUsers(
               htmlFor="image-upload"
               className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-3 rounded-xl"
             >
-              📷 Choose Image
+              📷 Choose
+              Image
             </label>
 
             <input
@@ -298,9 +362,13 @@ setFollowingUsers(
               type="file"
               className="hidden"
               accept="image/*"
-              onChange={(e) =>
+              onChange={(
+                e
+              ) =>
                 setImage(
-                  e.target.files[0]
+                  e
+                    .target
+                    .files[0]
                 )
               }
             />
@@ -313,8 +381,12 @@ setFollowingUsers(
           </div>
 
           <button
-            onClick={createPost}
-            disabled={loading}
+            onClick={
+              createPost
+            }
+            disabled={
+              loading
+            }
             className="mt-5 bg-blue-600 text-white px-6 py-3 rounded-xl"
           >
             {loading
@@ -325,93 +397,180 @@ setFollowingUsers(
 
         {/* Posts */}
         <div className="space-y-6">
-          {posts.map((post) => {
-            const isLiked =
-              post.likes?.includes(
-                currentUserId
-              );
+          {posts.map(
+            (post) => {
+              const isLiked =
+                post.likes?.includes(
+                  currentUserId
+                );
 
-            const isFollowing =
-              followingUsers.includes(
-                post.user?._id
-              );
+              const isFollowing =
+                followingUsers.includes(
+                  post.user?._id?.toString()
+                );
 
-            return (
-              <div
-                key={post._id}
-                className="bg-white p-6 rounded-2xl shadow-md"
-              >
-                <div className="flex justify-between">
-                  <div>
-                    <h2 className="font-bold text-xl">
-                      {
-                        post.user
-                          ?.username
-                      }
-                    </h2>
+              return (
+                <div
+                  key={
+                    post._id
+                  }
+                  className="bg-white p-6 rounded-2xl shadow-md"
+                >
+                  {/* Header */}
+                  <div className="flex justify-between">
+                    <div>
+                      <h2 className="font-bold text-xl">
+                        {
+                          post
+                            .user
+                            ?.username
+                        }
+                      </h2>
 
-                    <p className="text-gray-500 text-sm">
-                      {Array.isArray(
-                        post.user
-                          ?.followers
-                      )
-                        ? post.user
-                            .followers
-                            .length
-                        : 0}{" "}
-                      Followers •{" "}
-                      {Array.isArray(
-                        post.user
-                          ?.following
-                      )
-                        ? post.user
-                            .following
-                            .length
-                        : 0}{" "}
-                      Following
-                    </p>
+                      <p className="text-gray-500 text-sm">
+                        {
+                          post
+                            .user
+                            ?.followers
+                            ?.length ||
+                          0
+                        }{" "}
+                        Followers •{" "}
+                        {
+                          post
+                            .user
+                            ?.following
+                            ?.length ||
+                          0
+                        }{" "}
+                        Following
+                      </p>
+                    </div>
+
+                    {post
+                      .user
+                      ?._id !==
+                      currentUserId && (
+                      <button
+                        onClick={() =>
+                          handleFollow(
+                            post
+                              .user
+                              ._id
+                          )
+                        }
+                        className={`px-4 py-2 rounded-xl font-medium ${
+                          isFollowing
+                            ? "bg-gray-300"
+                            : "bg-blue-600 text-white"
+                        }`}
+                      >
+                        {isFollowing
+                          ? "Following"
+                          : "Follow"}
+                      </button>
+                    )}
                   </div>
 
-                  {post.user?._id !==
-                    currentUserId && (
-                    <button
-                      onClick={() =>
-                        handleFollow(
-                          post.user
-                            ._id
-                        )
+                  {/* Content */}
+                  {post.content && (
+                    <p className="mt-4 text-gray-700">
+                      {
+                        post.content
                       }
-                      className={`px-4 py-2 rounded-xl font-medium ${
-                        isFollowing
-                          ? "bg-gray-300"
-                          : "bg-blue-600 text-white"
-                      }`}
-                    >
-                      {isFollowing
-                        ? "Following"
-                        : "Follow"}
-                    </button>
+                    </p>
                   )}
+
+                  {/* Image */}
+                  {post.image && (
+                    <img
+                      src={
+                        post.image
+                      }
+                      alt="Post"
+                      className="mt-4 rounded-2xl w-full max-h-125 object-cover"
+                    />
+                  )}
+
+                  {/* Like */}
+                  <button
+                    onClick={() =>
+                      handleLike(
+                        post._id
+                      )
+                    }
+                    className="mt-4"
+                  >
+                    {isLiked
+                      ? "💜"
+                      : "🤍"}{" "}
+                    {
+                      post
+                        .likes
+                        ?.length
+                    }{" "}
+                    Likes
+                  </button>
+
+                  {/* Comments */}
+                  <div className="mt-4 border-t pt-4">
+                    <h3 className="font-semibold">
+                      💬{" "}
+                      {post
+                        .comments
+                        ?.length ||
+                        0}{" "}
+                      Comments
+                    </h3>
+
+                    <div className="flex gap-2 mt-3">
+                      <input
+                        type="text"
+                        placeholder="Add a comment..."
+                        value={
+                          commentText[
+                            post
+                              ._id
+                          ] ||
+                          ""
+                        }
+                        onChange={(
+                          e
+                        ) =>
+                          setCommentText(
+                            (
+                              prev
+                            ) => ({
+                              ...prev,
+                              [
+                                post
+                                  ._id
+                              ]:
+                                e
+                                  .target
+                                  .value,
+                            })
+                          )
+                        }
+                        className="flex-1 border rounded-xl px-4 py-2"
+                      />
+
+                      <button
+                        onClick={() =>
+                          handleComment(
+                            post._id
+                          )
+                        }
+                        className="bg-blue-600 text-white px-4 rounded-xl"
+                      >
+                        Post
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Content */}
-{post.content && (
-  <p className="mt-4 text-gray-700">
-    {post.content}
-  </p>
-)}
-
-{/* Image */}
-{post.image && (
-  <img
-    src={post.image}
-    alt="Post"
-    className="mt-4 rounded-2xl w-full max-h-125 object-cover"
-  />
-)}
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
       </div>
     </div>
