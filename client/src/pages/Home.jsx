@@ -222,13 +222,24 @@ function Home() {
         }
       );
 
-      const updatedFollowing =
-        res.data.currentUserFollowing ||
-        [];
+      const isAlreadyFollowing =
+  followingUsers.includes(
+    userId
+  );
 
-      setFollowingUsers(
-        updatedFollowing
-      );
+const updatedFollowing =
+  isAlreadyFollowing
+    ? followingUsers.filter(
+        (id) => id !== userId
+      )
+    : [
+        ...followingUsers,
+        userId,
+      ];
+
+setFollowingUsers(
+  updatedFollowing
+);
 
       localStorage.setItem(
         "user",
@@ -383,9 +394,21 @@ function Home() {
                   )}
                 </div>
 
-                <p className="mt-4">
-                  {post.content}
-                </p>
+                {/* Content */}
+{post.content && (
+  <p className="mt-4 text-gray-700">
+    {post.content}
+  </p>
+)}
+
+{/* Image */}
+{post.image && (
+  <img
+    src={post.image}
+    alt="Post"
+    className="mt-4 rounded-2xl w-full max-h-125 object-cover"
+  />
+)}
               </div>
             );
           })}
