@@ -534,7 +534,7 @@ const handleFollow = async (
                           post.image
                         }
                         alt="Post"
-                        className="mt-4 rounded-2xl w-full max-h-[500px] object-cover"
+                        className="mt-4 rounded-2xl w-full max-h-125 object-cover"
                       />
                     )}
 

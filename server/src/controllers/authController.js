@@ -42,11 +42,15 @@ const registerUser = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        followers: user.followers,
-        following: user.following,
+        bio: user.bio,
+        profilePic: user.profilePic,
+        followers: user.followers || [],
+        following: user.following || [],
       },
     });
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -86,11 +90,13 @@ const loginUser = async (req, res) => {
         email: user.email,
         bio: user.bio,
         profilePic: user.profilePic,
-        followers: user.followers,
-        following: user.following,
+        followers: user.followers || [],
+        following: user.following || [],
       },
     });
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -104,7 +110,7 @@ const toggleFollow = async (req, res) => {
 
     const targetUserId = req.params.id;
 
-    // Prevent self-follow
+    // Prevent self follow
     if (currentUserId === targetUserId) {
       return res.status(400).json({
         message: "You cannot follow yourself",
@@ -121,12 +127,17 @@ const toggleFollow = async (req, res) => {
       });
     }
 
+    // Safe arrays
+    currentUser.following = currentUser.following || [];
+
+    targetUser.followers = targetUser.followers || [];
+
     const isFollowing = currentUser.following.some(
       (id) => id.toString() === targetUserId,
     );
 
     if (isFollowing) {
-      // Unfollow
+      // UNFOLLOW
       currentUser.following = currentUser.following.filter(
         (id) => id.toString() !== targetUserId,
       );
@@ -134,29 +145,40 @@ const toggleFollow = async (req, res) => {
       targetUser.followers = targetUser.followers.filter(
         (id) => id.toString() !== currentUserId,
       );
+    } else {
+      // Avoid duplicate follow
+      if (!currentUser.following.some((id) => id.toString() === targetUserId)) {
+        currentUser.following.push(targetUserId);
+      }
 
-      await currentUser.save();
-      await targetUser.save();
-
-      return res.status(200).json({
-        message: "User unfollowed",
-        following: false,
-      });
+      if (!targetUser.followers.some((id) => id.toString() === currentUserId)) {
+        targetUser.followers.push(currentUserId);
+      }
     }
-
-    // Follow
-    currentUser.following.push(targetUserId);
-
-    targetUser.followers.push(currentUserId);
 
     await currentUser.save();
     await targetUser.save();
 
-    return res.status(200).json({
-      message: "User followed",
-      following: true,
+    // DEBUG
+    console.log("FOLLOW STATUS:", {
+      currentUser: currentUser.username,
+      targetUser: targetUser.username,
+      followers: targetUser.followers.length,
+      following: currentUser.following.length,
+    });
+
+    res.status(200).json({
+      message: isFollowing ? "User unfollowed" : "User followed",
+
+      following: !isFollowing,
+
+      followersCount: targetUser.followers.length,
+
+      followingCount: currentUser.following.length,
     });
   } catch (error) {
+    console.error("FOLLOW ERROR:", error);
+
     res.status(500).json({
       message: error.message,
     });
