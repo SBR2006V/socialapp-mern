@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import { Link } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
 
@@ -418,12 +423,13 @@ function Home() {
               >
                 <div className="flex justify-between">
                   <div>
-                    <h2 className="font-bold text-xl">
-                      {
-                        post.user
-                          ?.username
-                      }
-                    </h2>
+                    <Link
+  to={`/profile/${post.user?._id}`}
+>
+  <h2 className="font-bold text-xl hover:text-blue-600 transition cursor-pointer">
+    {post.user?.username}
+  </h2>
+</Link>
 
                     <p className="text-gray-500 text-sm">
                       {

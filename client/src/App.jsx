@@ -1,45 +1,44 @@
 import {
-  BrowserRouter,
   Routes,
   Route,
 } from "react-router-dom";
 
-import {
-  Toaster,
-} from "react-hot-toast";
-
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Home from "./pages/Home";
 
-import Navbar from "./components/Navbar";
+// Temporary Profile Page
+function Profile() {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-3xl font-bold">
+      Profile Page
+    </div>
+  );
+}
 
 function App() {
   return (
-    <BrowserRouter>
-      <Toaster />
+    <Routes>
+      <Route
+        path="/"
+        element={<Home />}
+      />
 
-      <Navbar />
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-      <Routes>
-        <Route
-          path="/"
-          element={<Home />}
-        />
+      <Route
+        path="/register"
+        element={<Register />}
+      />
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-        <Route
-          path="/register"
-          element={
-            <Register />
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+      <Route
+        path="/profile/:id"
+        element={<Profile />}
+      />
+    </Routes>
   );
 }
 
