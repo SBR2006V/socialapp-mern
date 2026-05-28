@@ -4,51 +4,46 @@ import toast from "react-hot-toast";
 import API from "../services/api";
 
 function Login() {
-  const [email, setEmail] =
-    useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [password, setPassword] =
-    useState("");
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  const handleLogin =
-    async (e) => {
-      e.preventDefault();
+    try {
+      const res = await API.post(
+        "/login",
+        {
+          email,
+          password,
+        }
+      );
 
-      try {
-        const res =
-          await API.post(
-            "/api/auth/login",
-            {
-              email,
-              password,
-            }
-          );
+      // Save user + token
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...res.data.user,
+          token: res.data.token,
+        })
+      );
 
-        // Save BOTH token + user together
-        localStorage.setItem(
-  "user",
-  JSON.stringify({
-    ...res.data.user,
-    token: res.data.token,
-  })
-);
+      toast.success(
+        `Welcome back, ${res.data.user.username}!`
+      );
 
-        toast.success(
-          "Login Successful"
-        );
+      navigate("/");
+    } catch (error) {
+      console.log(error);
 
-        navigate("/");
-      } catch (error) {
-        toast.error(
-          error.response?.data
-            ?.message ||
-            "Login failed"
-        );
-      }
-    };
+      toast.error(
+        error.response?.data?.message ||
+          "Login failed"
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center">
@@ -58,9 +53,7 @@ function Login() {
         </h1>
 
         <form
-          onSubmit={
-            handleLogin
-          }
+          onSubmit={handleLogin}
           className="space-y-5"
         >
           <input
@@ -68,9 +61,7 @@ function Login() {
             placeholder="Email"
             value={email}
             onChange={(e) =>
-              setEmail(
-                e.target.value
-              )
+              setEmail(e.target.value)
             }
             className="w-full p-4 border rounded-xl"
             required
@@ -81,9 +72,7 @@ function Login() {
             placeholder="Password"
             value={password}
             onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
+              setPassword(e.target.value)
             }
             className="w-full p-4 border rounded-xl"
             required

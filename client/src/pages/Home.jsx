@@ -33,7 +33,7 @@ function Home() {
   // Fetch posts
   const fetchPosts = async () => {
     try {
-      const res = await API.get("/api/posts");
+      const res = await API.get("/posts")
 
       setPosts(res.data);
     } catch (error) {
@@ -74,7 +74,7 @@ function Home() {
 
       const res =
         await API.post(
-          "/api/posts",
+  "/posts",
           formData,
           {
             headers: {
@@ -114,7 +114,7 @@ function Home() {
     try {
       const res =
         await API.put(
-          `/api/posts/${postId}/like`,
+          `/posts/${postId}/like`,
           {},
           {
             headers: {
@@ -158,7 +158,7 @@ function Home() {
 
         const res =
           await API.post(
-            `/api/posts/${postId}/comment`,
+            `/posts/${postId}/comment`,
             { text },
             {
               headers: {
@@ -195,7 +195,7 @@ function Home() {
       try {
         const res =
           await API.put(
-            `/api/auth/${userId}/follow`,
+            `/auth/${userId}/follow`,
             {},
             {
               headers: {

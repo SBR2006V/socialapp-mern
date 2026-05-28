@@ -1,14 +1,15 @@
 const express = require("express");
 
-const router = express.Router();
-
 const {
   registerUser,
   loginUser,
   toggleFollow,
+  getUserProfile,
 } = require("../controllers/authController");
 
-const protect = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
+
+const router = express.Router();
 
 // Register
 router.post("/register", registerUser);
@@ -16,7 +17,10 @@ router.post("/register", registerUser);
 // Login
 router.post("/login", loginUser);
 
-// Follow / Unfollow
-router.put("/:id/follow", protect, toggleFollow);
+// Follow / unfollow
+router.put("/:id/follow", authMiddleware, toggleFollow);
+
+// Profile route
+router.get("/profile/:id", authMiddleware, getUserProfile);
 
 module.exports = router;

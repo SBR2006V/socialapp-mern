@@ -13,46 +13,46 @@ function Register() {
   const [password, setPassword] =
     useState("");
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const handleRegister =
-    async (e) => {
-      e.preventDefault();
+  const handleRegister = async (
+    e
+  ) => {
+    e.preventDefault();
 
-      try {
-        const res =
-          await API.post(
-            "/api/auth/register",
-            {
-              username,
-              email,
-              password,
-            }
-          );
+    try {
+      const res = await API.post(
+        "/register",
+        {
+          username,
+          email,
+          password,
+        }
+      );
 
-        // Save BOTH token + user together
-        localStorage.setItem(
-  "user",
-  JSON.stringify({
-    ...res.data.user,
-    token: res.data.token,
-  })
-);
+      // Save user + token
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...res.data.user,
+          token: res.data.token,
+        })
+      );
 
-        toast.success(
-          "Registered Successfully"
-        );
+      toast.success(
+        "Registered Successfully"
+      );
 
-        navigate("/");
-      } catch (error) {
-        toast.error(
-          error.response?.data
-            ?.message ||
-            "Registration failed"
-        );
-      }
-    };
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Registration failed"
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center">

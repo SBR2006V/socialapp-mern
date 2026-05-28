@@ -1,6 +1,9 @@
 const User = require("../models/User");
+const Post = require("../models/Post");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+const Post = require("../models/Post");
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -185,8 +188,36 @@ const toggleFollow = async (req, res) => {
   }
 };
 
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const posts = await Post.find({
+      user: req.params.id,
+    }).sort({
+      createdAt: -1,
+    });
+
+    res.status(200).json({
+      user,
+      posts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   toggleFollow,
+  getUserProfile,
 };
