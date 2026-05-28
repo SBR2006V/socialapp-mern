@@ -1,18 +1,21 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
 
 function Home() {
-  // FIX: storedUser must come first
   const storedUser =
     JSON.parse(localStorage.getItem("user")) || {};
 
+  const token = storedUser?.token;
+
+  const username =
+    storedUser?.username ||
+    storedUser?.user?.username ||
+    "User";
+
   const currentUserId =
+    storedUser?.id ||
     storedUser?.user?.id;
 
   const [posts, setPosts] = useState([]);
@@ -21,7 +24,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState({});
 
-  // FIX: Follow state persists after refresh
+  // Follow state
   const [followingUsers, setFollowingUsers] =
     useState(
       storedUser?.user?.following || []
@@ -33,41 +36,9 @@ function Home() {
       const res = await API.get("/api/posts");
 
       setPosts(res.data);
-
-      // Sync follow state from logged in user
-      const currentUserPost =
-        res.data.find(
-          (post) =>
-            post.user?._id ===
-            currentUserId
-        );
-
-      if (currentUserPost?.user?.following) {
-        setFollowingUsers(
-          currentUserPost.user.following.map(
-            (id) => id.toString()
-          )
-        );
-
-        const updatedUser = {
-          ...storedUser,
-          user: {
-            ...storedUser.user,
-            following:
-              currentUserPost.user.following,
-          },
-        };
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(updatedUser)
-        );
-      }
     } catch (error) {
       console.log(error);
-      toast.error(
-        "Failed to load posts"
-      );
+      toast.error("Failed to load posts");
     }
   };
 
@@ -84,16 +55,6 @@ function Home() {
         );
       }
 
-      const token = storedUser?.token;
-
-      if (!token) {
-        return toast.error(
-          "Login first"
-        );
-      }
-
-      setLoading(true);
-
       const formData =
         new FormData();
 
@@ -108,6 +69,8 @@ function Home() {
           image
         );
       }
+
+      setLoading(true);
 
       const res =
         await API.post(
@@ -125,9 +88,7 @@ function Home() {
         ...prev,
       ]);
 
-      toast.success(
-        "Post created"
-      );
+      toast.success("Post created");
 
       setContent("");
       setImage(null);
@@ -146,12 +107,11 @@ function Home() {
     }
   };
 
-  // Like Post
-  const handleLike = async (postId) => {
+  // Like
+  const handleLike = async (
+    postId
+  ) => {
     try {
-      const token =
-        storedUser?.token;
-
       const res =
         await API.put(
           `/api/posts/${postId}/like`,
@@ -185,9 +145,6 @@ function Home() {
   const handleComment =
     async (postId) => {
       try {
-        const token =
-          storedUser?.token;
-
         const text =
           commentText[
             postId
@@ -236,9 +193,6 @@ function Home() {
   const handleFollow =
     async (userId) => {
       try {
-        const token =
-          storedUser?.token;
-
         const res =
           await API.put(
             `/api/auth/${userId}/follow`,
@@ -256,15 +210,9 @@ function Home() {
         if (
           res.data.following
         ) {
-          if (
-            !updatedFollowing.includes(
-              userId
-            )
-          ) {
-            updatedFollowing.push(
-              userId
-            );
-          }
+          updatedFollowing.push(
+            userId
+          );
         } else {
           updatedFollowing =
             updatedFollowing.filter(
@@ -273,11 +221,18 @@ function Home() {
             );
         }
 
+        // Remove duplicates
+        updatedFollowing = [
+          ...new Set(
+            updatedFollowing
+          ),
+        ];
+
         setFollowingUsers(
           updatedFollowing
         );
 
-        // Update localStorage
+        // Save to localStorage
         const updatedUser = {
           ...storedUser,
           user: {
@@ -294,13 +249,18 @@ function Home() {
           )
         );
 
-        // Update posts instantly
+        // Update followers instantly
         setPosts((prev) =>
           prev.map((post) => {
             if (
               post.user?._id ===
               userId
             ) {
+              const followers =
+                post.user
+                  ?.followers ||
+                [];
+
               return {
                 ...post,
                 user: {
@@ -308,18 +268,10 @@ function Home() {
                   followers:
                     res.data.following
                       ? [
-                          ...(post
-                            .user
-                            ?.followers ||
-                            []),
+                          ...followers,
                           currentUserId,
                         ]
-                      : (
-                          post
-                            .user
-                            ?.followers ||
-                          []
-                        ).filter(
+                      : followers.filter(
                           (id) =>
                             id !==
                             currentUserId
@@ -337,7 +289,6 @@ function Home() {
         );
       } catch (error) {
         console.log(error);
-
         toast.error(
           "Failed to follow user"
         );
@@ -347,9 +298,37 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          Social Feed
-        </h1>
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold">
+              Social Feed
+            </h1>
+
+            <p className="text-gray-600 mt-1">
+              Hello,{" "}
+              <span className="font-semibold">
+                {username}
+              </span>
+              👋
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem(
+                "user"
+              );
+
+              window.location.href =
+                "/login";
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-medium"
+          >
+            Logout
+          </button>
+        </div>
 
         {/* Create Post */}
         <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
@@ -365,7 +344,7 @@ function Home() {
             rows="4"
           />
 
-          <div className="mt-4 flex items-center gap-4 flex-wrap">
+          <div className="mt-4 flex gap-4 items-center">
             <label
               htmlFor="image-upload"
               className="cursor-pointer bg-gray-200 hover:bg-gray-300 px-5 py-3 rounded-xl"
@@ -385,7 +364,7 @@ function Home() {
               }
             />
 
-            <span className="text-sm text-gray-500">
+            <span>
               {image
                 ? image.name
                 : "No image selected"}
@@ -407,14 +386,18 @@ function Home() {
         <div className="space-y-6">
           {posts.map((post) => {
             const isLiked =
-              post.likes?.includes(
-                currentUserId
-              );
+  post.likes?.some(
+    (id) =>
+      id.toString() ===
+      currentUserId?.toString()
+  );
 
             const isFollowing =
-              followingUsers.includes(
-                post.user?._id?.toString()
-              );
+  followingUsers.some(
+    (id) =>
+      id.toString() ===
+      post.user?._id?.toString()
+  );
 
             return (
               <div
@@ -422,39 +405,37 @@ function Home() {
                 className="bg-white p-6 rounded-2xl shadow-md"
               >
                 <div className="flex justify-between">
+
                   <div>
                     <Link
-  to={`/profile/${post.user?._id}`}
->
-  <h2 className="font-bold text-xl hover:text-blue-600 transition cursor-pointer">
-    {post.user?.username}
-  </h2>
-</Link>
+                      to={`/profile/${post.user?._id}`}
+                    >
+                      <h2 className="font-bold text-xl hover:text-blue-600">
+                        {post.user?.username}
+                      </h2>
+                    </Link>
 
                     <p className="text-gray-500 text-sm">
                       {
                         post.user
                           ?.followers
                           ?.length || 0
-                      }{" "}
-                      Followers •{" "}
+                      } Followers •{" "}
                       {
                         post.user
                           ?.following
                           ?.length || 0
-                      }{" "}
-                      Following
+                      } Following
                     </p>
                   </div>
 
-                  {post.user
-                    ?._id !==
+                  {post.user?._id !==
                     currentUserId && (
                     <button
                       onClick={() =>
                         handleFollow(
                           post.user
-                            ._id
+                            ?._id
                         )
                       }
                       className={`px-4 py-2 rounded-xl font-medium ${
@@ -471,7 +452,7 @@ function Home() {
                 </div>
 
                 {post.content && (
-                  <p className="mt-4 text-gray-700">
+                  <p className="mt-4">
                     {post.content}
                   </p>
                 )}
@@ -480,7 +461,7 @@ function Home() {
                   <img
                     src={post.image}
                     alt="Post"
-                    className="mt-4 rounded-2xl w-full object-cover"
+                    className="mt-4 rounded-2xl w-full"
                   />
                 )}
 
@@ -498,54 +479,8 @@ function Home() {
                   {
                     post.likes
                       ?.length
-                  }{" "}
-                  Likes
+                  } Likes
                 </button>
-
-                <div className="mt-4 border-t pt-4">
-                  <h3 className="font-semibold">
-                    💬{" "}
-                    {post.comments
-                      ?.length || 0}{" "}
-                    Comments
-                  </h3>
-
-                  <div className="flex gap-2 mt-3">
-                    <input
-                      type="text"
-                      placeholder="Add a comment..."
-                      value={
-                        commentText[
-                          post._id
-                        ] || ""
-                      }
-                      onChange={(e) =>
-                        setCommentText(
-                          (
-                            prev
-                          ) => ({
-                            ...prev,
-                            [post._id]:
-                              e.target
-                                .value,
-                          })
-                        )
-                      }
-                      className="flex-1 border rounded-xl px-4 py-2"
-                    />
-
-                    <button
-                      onClick={() =>
-                        handleComment(
-                          post._id
-                        )
-                      }
-                      className="bg-blue-600 text-white px-4 rounded-xl"
-                    >
-                      Post
-                    </button>
-                  </div>
-                </div>
               </div>
             );
           })}
