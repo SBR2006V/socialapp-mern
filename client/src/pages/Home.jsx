@@ -10,6 +10,8 @@ function Home() {
   console.log(storedUser);
 console.log(token);
 
+const token = storedUser?.token;
+
   const username =
   storedUser?.username || "User";
 
