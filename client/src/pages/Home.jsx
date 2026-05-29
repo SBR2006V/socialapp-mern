@@ -7,7 +7,8 @@ function Home() {
   const storedUser =
     JSON.parse(localStorage.getItem("user")) || {};
 
-  const token = storedUser?.token;
+  console.log(storedUser);
+console.log(token);
 
   const username =
   storedUser?.username || "User";
@@ -113,14 +114,8 @@ function Home() {
     try {
       const res =
         await API.put(
-          `/posts/${postId}/like`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+  `/auth/${id}/follow`
+);
 
       setPosts((prev) =>
         prev.map((post) =>

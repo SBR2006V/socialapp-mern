@@ -17,9 +17,6 @@ function Profile() {
     storedUser?.id ||
     storedUser?.user?.id;
 
-  const token =
-    storedUser?.token;
-
   const [user, setUser] =
     useState(null);
 
@@ -59,11 +56,6 @@ function Profile() {
         const res =
           await API.get(
             `/auth/profile/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
           );
 
         setUser(
@@ -125,11 +117,6 @@ function Profile() {
           await API.put(
             "/auth/profile",
             formData,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
           );
 
         setUser(
