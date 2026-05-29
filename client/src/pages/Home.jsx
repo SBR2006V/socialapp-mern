@@ -235,17 +235,33 @@ function Home() {
                 >
                   {/* Post Header */}
                   <div className="flex justify-between items-start">
-                    <div>
-                      <Link to={`/profile/${post.user?._id}`}>
-                        <h2 className="font-bold text-xl hover:text-blue-600">
-                          {post.user?.username}
-                        </h2>
-                      </Link>
-                      <p className="text-gray-500 text-sm">
-                        {post.user?.followers?.length || 0} Followers •{" "}
-                        {post.user?.following?.length || 0} Following
-                      </p>
-                    </div>
+                    <div className="flex items-center gap-3">
+  <Link to={`/profile/${post.user?._id}`}>
+    {post.user?.profilePic ? (
+      <img
+        src={post.user.profilePic}
+        alt={post.user.username}
+        className="w-11 h-11 rounded-full object-cover"
+      />
+    ) : (
+      <div className="w-11 h-11 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-600 text-sm">
+        {post.user?.username?.slice(0, 2).toUpperCase()}
+      </div>
+    )}
+  </Link>
+
+  <div>
+    <Link to={`/profile/${post.user?._id}`}>
+      <h2 className="font-bold text-xl hover:text-blue-600">
+        {post.user?.username}
+      </h2>
+    </Link>
+    <p className="text-gray-500 text-sm">
+      {post.user?.followers?.length || 0} Followers •{" "}
+      {post.user?.following?.length || 0} Following
+    </p>
+  </div>
+</div>
 
                     {/* FIX: Hide Follow button on your own posts */}
                     {!isOwnPost && (
