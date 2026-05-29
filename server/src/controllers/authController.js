@@ -213,9 +213,43 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    user.username = req.body.username || user.username;
+
+    user.bio = req.body.bio || user.bio;
+
+    if (req.file) {
+      user.profilePic = req.file.path;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated",
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   toggleFollow,
   getUserProfile,
+  updateProfile,
 };

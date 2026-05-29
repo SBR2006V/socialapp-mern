@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://socialapp-backend-acv1.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
 export default API;

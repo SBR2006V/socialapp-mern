@@ -5,9 +5,12 @@ const {
   loginUser,
   toggleFollow,
   getUserProfile,
+  updateProfile,
 } = require("../controllers/authController");
 
 const authMiddleware = require("../middleware/authMiddleware");
+
+const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -17,10 +20,18 @@ router.post("/register", registerUser);
 // Login
 router.post("/login", loginUser);
 
-// Follow / unfollow
+// Follow / Unfollow
 router.put("/:id/follow", authMiddleware, toggleFollow);
 
-// Profile route
+// Get profile
 router.get("/profile/:id", authMiddleware, getUserProfile);
+
+// Update profile
+router.put(
+  "/profile",
+  authMiddleware,
+  upload.single("profilePic"),
+  updateProfile,
+);
 
 module.exports = router;
