@@ -10,13 +10,10 @@ function Home() {
   const token = storedUser?.token;
 
   const username =
-    storedUser?.username ||
-    storedUser?.user?.username ||
-    "User";
+  storedUser?.username || "User";
 
   const currentUserId =
-    storedUser?.id ||
-    storedUser?.user?.id;
+  storedUser?.id;
 
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
@@ -26,16 +23,18 @@ function Home() {
 
   // Follow state
   const [followingUsers, setFollowingUsers] =
-    useState(
-      storedUser?.user?.following || []
-    );
+  useState(
+    Array.isArray(storedUser?.following)
+      ? storedUser.following
+      : []
+  );
 
   // Fetch posts
   const fetchPosts = async () => {
     try {
       const res = await API.get("/posts")
 
-      setPosts(res.data);
+      setPosts(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.log(error);
       toast.error("Failed to load posts");
@@ -235,11 +234,7 @@ function Home() {
         // Save to localStorage
         const updatedUser = {
           ...storedUser,
-          user: {
-            ...storedUser.user,
-            following:
-              updatedFollowing,
-          },
+          following: updatedFollowing,
         };
 
         localStorage.setItem(
@@ -384,7 +379,8 @@ function Home() {
 
         {/* Posts */}
         <div className="space-y-6">
-          {posts.map((post) => {
+          {Array.isArray(posts) &&
+            posts.map((post) => {
             const isLiked =
   post.likes?.some(
     (id) =>
