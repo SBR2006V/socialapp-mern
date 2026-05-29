@@ -181,16 +181,6 @@ function Home() {
               Hello, <span className="font-semibold">{username}</span> 👋
             </p>
           </div>
-
-          <button
-            onClick={() => {
-              localStorage.removeItem("user");
-              window.location.href = "/login";
-            }}
-            className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-medium"
-          >
-            Logout
-          </button>
         </div>
 
         {/* Create Post */}

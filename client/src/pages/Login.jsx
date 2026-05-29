@@ -13,9 +13,9 @@ function Login() {
     e.preventDefault();
 
     try {
-      await API.post("/auth/login", { email, password });
+      // FIX: Added `const res =` back — was missing, causing "res is not defined" crash
+      const res = await API.post("/auth/login", { email, password });
 
-      // Save user + token
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -24,39 +24,26 @@ function Login() {
         })
       );
 
-      toast.success(
-        `Welcome back, ${res.data.user.username}!`
-      );
+      toast.success(`Welcome back, ${res.data.user.username}!`);
 
       navigate("/");
     } catch (error) {
       console.log(error);
-
-      toast.error(
-        error.response?.data?.message ||
-          "Login failed"
-      );
+      toast.error(error.response?.data?.message || "Login failed");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center">
       <div className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          Login
-        </h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Login</h1>
 
-        <form
-          onSubmit={handleLogin}
-          className="space-y-5"
-        >
+        <form onSubmit={handleLogin} className="space-y-5">
           <input
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-4 border rounded-xl"
             required
           />
@@ -65,9 +52,7 @@ function Login() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-4 border rounded-xl"
             required
           />
@@ -81,11 +66,8 @@ function Login() {
         </form>
 
         <p className="text-center mt-5">
-          Don’t have an account?{" "}
-          <Link
-            to="/register"
-            className="text-blue-600"
-          >
+          Don't have an account?{" "}
+          <Link to="/register" className="text-blue-600">
             Register
           </Link>
         </p>
