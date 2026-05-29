@@ -1,54 +1,36 @@
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Navbar() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const user =
-    JSON.parse(
-      localStorage.getItem(
-        "user"
-      )
-    );
+  const user = JSON.parse(localStorage.getItem("user"));
 
+  // FIX: Removed localStorage.removeItem("token") — that key doesn't exist.
+  // The token lives inside the "user" object, so removing "user" is enough.
   const logout = () => {
-    localStorage.removeItem(
-      "token"
-    );
-
-    localStorage.removeItem(
-      "user"
-    );
-
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
   return (
     <nav className="bg-white shadow-md px-10 py-5 flex justify-between items-center">
-      <Link
-        to="/"
-        className="text-3xl font-bold text-blue-600"
-      >
+      <Link to="/" className="text-3xl font-bold text-blue-600">
         SocialApp
       </Link>
 
       <div className="flex items-center gap-6">
         {user ? (
           <>
-            <p className="font-medium">
-              Hello,{" "}
-              {
-                user?.username
-              }
-            </p>
+            {/* FIX: Wrap username in a Link so clicking it goes to your profile */}
+            <Link
+              to={`/profile/${user?.id}`}
+              className="font-medium hover:text-blue-600 transition"
+            >
+              Hello, {user?.username}
+            </Link>
 
             <button
-              onClick={
-                logout
-              }
+              onClick={logout}
               className="bg-red-500 text-white px-5 py-2 rounded-xl hover:bg-red-600 transition"
             >
               Logout
@@ -56,10 +38,7 @@ function Navbar() {
           </>
         ) : (
           <>
-            <Link
-              to="/login"
-              className="font-medium"
-            >
+            <Link to="/login" className="font-medium">
               Login
             </Link>
 

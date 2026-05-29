@@ -173,16 +173,6 @@ function Home() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto">
 
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold">Social Feed</h1>
-            <p className="text-gray-600 mt-1">
-              Hello, <span className="font-semibold">{username}</span> 👋
-            </p>
-          </div>
-        </div>
-
         {/* Create Post */}
         <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
           <textarea
