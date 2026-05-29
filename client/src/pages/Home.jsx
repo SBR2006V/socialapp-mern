@@ -8,7 +8,6 @@ function Home() {
     JSON.parse(localStorage.getItem("user")) || {};
 
   console.log(storedUser);
-console.log(token);
 
 const token = storedUser?.token;
 
