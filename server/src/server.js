@@ -12,8 +12,6 @@ const authRoutes = require("./routes/authRoutes");
 
 const postRoutes = require("./routes/postRoutes");
 
-dotenv.config();
-
 // connect database
 connectDB();
 

@@ -162,9 +162,7 @@ function Profile() {
     );
   }
 
-  const isOwnProfile =
-    currentUserId ===
-    user?._id;
+  const isOwnProfile = currentUserId?.toString() === user?._id?.toString();
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">

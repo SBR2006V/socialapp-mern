@@ -24,7 +24,7 @@ router.post("/login", loginUser);
 router.put("/:id/follow", authMiddleware, toggleFollow);
 
 // Get profile
-router.get("/profile/:id", authMiddleware, getUserProfile);
+router.get("/profile/:id", getUserProfile);
 
 // Update profile
 router.put(

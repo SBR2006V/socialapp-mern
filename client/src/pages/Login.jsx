@@ -13,13 +13,7 @@ function Login() {
     e.preventDefault();
 
     try {
-      const res = await API.post(
-        "/login",
-        {
-          email,
-          password,
-        }
-      );
+      await API.post("/auth/login", { email, password });
 
       // Save user + token
       localStorage.setItem(
