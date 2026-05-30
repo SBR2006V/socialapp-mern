@@ -4,31 +4,27 @@ import API from "../services/api";
 import toast from "react-hot-toast";
 
 function Home() {
-  // Read storedUser once — it doesn't change during this session
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
   const token = storedUser?.token;
-  const username = storedUser?.username || "User";
-
-  // FIX: Convert currentUserId to string immediately so comparisons are reliable
   const currentUserId = storedUser?.id?.toString();
 
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // commentText is a map of { postId: "text" }
   const [commentText, setCommentText] = useState({});
-
-  // Track which comment sections are expanded
   const [openComments, setOpenComments] = useState({});
-
-  // Follow state — seed from localStorage
   const [followingUsers, setFollowingUsers] = useState(
     Array.isArray(storedUser?.following) ? storedUser.following : []
   );
 
-  // ─── Fetch Posts ─────────────────────────────────────────────────────────
+  // Custom delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    postId: null,
+  });
+
+  // ─── Fetch Posts ──────────────────────────────────────────────────────────
   const fetchPosts = async () => {
     try {
       const res = await API.get("/posts");
@@ -76,9 +72,7 @@ function Home() {
   // ─── Like / Unlike ────────────────────────────────────────────────────────
   const handleLike = async (postId) => {
     try {
-      // FIX Bug 1: Correct endpoint — was /auth/${id}/follow before
       const res = await API.put(`/posts/${postId}/like`);
-
       setPosts((prev) =>
         prev.map((post) =>
           post._id === postId ? { ...post, likes: res.data.likes } : post
@@ -87,6 +81,30 @@ function Home() {
     } catch {
       toast.error("Failed to like post");
     }
+  };
+
+  // ─── Delete Post ──────────────────────────────────────────────────────────
+  // Step 1: open the custom modal
+  const confirmDelete = (postId) => {
+    setDeleteModal({ open: true, postId });
+  };
+
+  // Step 2: user clicked "Delete" in modal
+  const handleDelete = async () => {
+    try {
+      await API.delete(`/posts/${deleteModal.postId}`);
+      setPosts((prev) => prev.filter((post) => post._id !== deleteModal.postId));
+      toast.success("Post deleted");
+    } catch {
+      toast.error("Failed to delete post");
+    } finally {
+      setDeleteModal({ open: false, postId: null });
+    }
+  };
+
+  // Step 3: user clicked "Cancel" in modal
+  const cancelDelete = () => {
+    setDeleteModal({ open: false, postId: null });
   };
 
   // ─── Comment ──────────────────────────────────────────────────────────────
@@ -104,12 +122,10 @@ function Home() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Replace post with updated one (comments included)
       setPosts((prev) =>
         prev.map((post) => (post._id === postId ? res.data : post))
       );
 
-      // Clear comment input for this post
       setCommentText((prev) => ({ ...prev, [postId]: "" }));
     } catch {
       toast.error("Failed to comment");
@@ -133,16 +149,12 @@ function Home() {
         updatedFollowing = updatedFollowing.filter((id) => id !== userId);
       }
 
-      // Remove duplicates
       updatedFollowing = [...new Set(updatedFollowing)];
-
       setFollowingUsers(updatedFollowing);
 
-      // Keep localStorage in sync
       const updatedUser = { ...storedUser, following: updatedFollowing };
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // Optimistically update follower counts on posts
       setPosts((prev) =>
         prev.map((post) => {
           if (post.user?._id?.toString() === userId?.toString()) {
@@ -172,6 +184,47 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto">
+
+        {/* ── Custom Delete Confirmation Modal ── */}
+        {deleteModal.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Dark backdrop */}
+            <div
+              className="absolute inset-0 bg-black bg-opacity-40"
+              onClick={cancelDelete}
+            />
+
+            {/* Modal box */}
+            <div className="relative bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm mx-4 text-center">
+              {/* Warning icon */}
+              <div className="text-5xl mb-4">🗑️</div>
+
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
+                Delete this post?
+              </h2>
+
+              <p className="text-gray-500 text-sm mb-6">
+                This action cannot be undone. The post will be permanently removed.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Create Post */}
         <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
@@ -219,55 +272,59 @@ function Home() {
                 (id) => id?.toString() === currentUserId
               );
 
-              // FIX: Convert both sides to string — Mongoose ObjectId vs plain string mismatch
               const isFollowing = followingUsers.some(
                 (id) => id?.toString() === post.user?._id?.toString()
               );
 
-              // FIX: Same string conversion fix — was always showing Follow button on own posts
-              const isOwnPost =
-                post.user?._id?.toString() === currentUserId;
+              const isOwnPost = post.user?._id?.toString() === currentUserId;
 
               return (
-                <div
-                  key={post._id}
-                  className="bg-white p-6 rounded-2xl shadow-md"
-                >
+                <div key={post._id} className="bg-white p-6 rounded-2xl shadow-md">
+
                   {/* Post Header */}
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center">
+
+                    {/* Avatar + Name */}
                     <div className="flex items-center gap-3">
-  <Link to={`/profile/${post.user?._id}`}>
-    {post.user?.profilePic ? (
-      <img
-        src={post.user.profilePic}
-        alt={post.user.username}
-        className="w-11 h-11 rounded-full object-cover"
-      />
-    ) : (
-      <div className="w-11 h-11 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-600 text-sm">
-        {post.user?.username?.slice(0, 2).toUpperCase()}
-      </div>
-    )}
-  </Link>
+                      <Link to={`/profile/${post.user?._id}`}>
+                        {post.user?.profilePic ? (
+                          <img
+                            src={post.user.profilePic}
+                            alt={post.user.username}
+                            className="w-11 h-11 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-600 text-sm">
+                            {post.user?.username?.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </Link>
 
-  <div>
-    <Link to={`/profile/${post.user?._id}`}>
-      <h2 className="font-bold text-xl hover:text-blue-600">
-        {post.user?.username}
-      </h2>
-    </Link>
-    <p className="text-gray-500 text-sm">
-      {post.user?.followers?.length || 0} Followers •{" "}
-      {post.user?.following?.length || 0} Following
-    </p>
-  </div>
-</div>
+                      <div>
+                        <Link to={`/profile/${post.user?._id}`}>
+                          <h2 className="font-bold text-lg hover:text-blue-600 leading-tight">
+                            {post.user?.username}
+                          </h2>
+                        </Link>
+                        <p className="text-gray-500 text-sm">
+                          {post.user?.followers?.length || 0} Followers •{" "}
+                          {post.user?.following?.length || 0} Following
+                        </p>
+                      </div>
+                    </div>
 
-                    {/* FIX: Hide Follow button on your own posts */}
-                    {!isOwnPost && (
+                    {/* Delete (own posts) or Follow (others) */}
+                    {isOwnPost ? (
+                      <button
+                        onClick={() => confirmDelete(post._id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-sm font-medium transition"
+                      >
+                        🗑 Delete
+                      </button>
+                    ) : (
                       <button
                         onClick={() => handleFollow(post.user?._id)}
-                        className={`px-4 py-2 rounded-xl font-medium ${
+                        className={`px-4 py-2 rounded-xl font-medium text-sm ${
                           isFollowing
                             ? "bg-gray-300 text-gray-700"
                             : "bg-blue-600 text-white"
@@ -279,9 +336,7 @@ function Home() {
                   </div>
 
                   {/* Post Content */}
-                  {post.content && (
-                    <p className="mt-4">{post.content}</p>
-                  )}
+                  {post.content && <p className="mt-4">{post.content}</p>}
 
                   {/* Post Image */}
                   {post.image && (
@@ -300,10 +355,9 @@ function Home() {
                     {isLiked ? "💜" : "🤍"} {post.likes?.length || 0} Likes
                   </button>
 
-                  {/* ── FIX Bug 2: Comment Section (was completely missing) ── */}
+                  {/* Comment Section */}
                   <div className="mt-4 border-t pt-4">
 
-                    {/* Toggle comments visibility */}
                     <button
                       onClick={() =>
                         setOpenComments((prev) => ({
@@ -317,7 +371,6 @@ function Home() {
                       {post.comments?.length !== 1 ? "s" : ""}
                     </button>
 
-                    {/* Comments list */}
                     {openComments[post._id] && (
                       <div className="space-y-2 mb-3">
                         {post.comments?.length === 0 ? (
@@ -342,7 +395,6 @@ function Home() {
                       </div>
                     )}
 
-                    {/* Comment Input */}
                     <div className="flex gap-2 mt-2">
                       <input
                         type="text"

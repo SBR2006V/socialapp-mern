@@ -4,14 +4,10 @@ const Post = require("../models/Post");
 const createPost = async (req, res) => {
   try {
     const { content } = req.body;
-
     const image = req.file?.path || "";
 
-    // Prevent empty post
     if (!content?.trim() && !image) {
-      return res.status(400).json({
-        message: "Post cannot be empty",
-      });
+      return res.status(400).json({ message: "Post cannot be empty" });
     }
 
     const post = await Post.create({
@@ -22,16 +18,13 @@ const createPost = async (req, res) => {
 
     const populatedPost = await Post.findById(post._id).populate(
       "user",
-      "username",
+      "username"
     );
 
     res.status(201).json(populatedPost);
   } catch (error) {
     console.error("Create Post Error:", error);
-
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -41,32 +34,25 @@ const getPosts = async (req, res) => {
     const posts = await Post.find()
       .populate("user", "username bio profilePic followers following")
       .populate("comments.user", "username")
-      .sort({
-        createdAt: -1,
-      });
+      .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
   } catch (error) {
     console.error("GET POSTS ERROR:", error);
-
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
+
 // Like / Unlike Post
 const toggleLike = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({
-        message: "Post not found",
-      });
+      return res.status(404).json({ message: "Post not found" });
     }
 
     const userId = req.user._id.toString();
-
     const alreadyLiked = post.likes.some((id) => id.toString() === userId);
 
     if (alreadyLiked) {
@@ -76,12 +62,9 @@ const toggleLike = async (req, res) => {
     }
 
     await post.save();
-
     res.status(200).json(post);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -91,24 +74,16 @@ const addComment = async (req, res) => {
     const { text } = req.body;
 
     if (!text?.trim()) {
-      return res.status(400).json({
-        message: "Comment cannot be empty",
-      });
+      return res.status(400).json({ message: "Comment cannot be empty" });
     }
 
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({
-        message: "Post not found",
-      });
+      return res.status(404).json({ message: "Post not found" });
     }
 
-    post.comments.push({
-      user: req.user._id,
-      text,
-    });
-
+    post.comments.push({ user: req.user._id, text });
     await post.save();
 
     const updatedPost = await Post.findById(req.params.id)
@@ -117,9 +92,30 @@ const addComment = async (req, res) => {
 
     res.status(200).json(updatedPost);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete Post — only the post owner can delete
+const deletePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Make sure the person deleting actually owns the post
+    if (post.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this post" });
+    }
+
+    await post.deleteOne();
+
+    res.status(200).json({ message: "Post deleted" });
+  } catch (error) {
+    console.error("Delete Post Error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -128,4 +124,5 @@ module.exports = {
   getPosts,
   toggleLike,
   addComment,
+  deletePost,
 };

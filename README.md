@@ -1,194 +1,171 @@
 # 🌐 SocialApp
 
-A modern **MERN-based Social Media Platform** where users can register, create posts, upload images, like posts, and interact through comments in a clean and responsive interface.
+A full-stack **Social Media Platform** built with the MERN stack. Users can register, create posts, interact through likes and comments, follow other users, and manage their profiles — all in a clean, responsive interface.
+
+**Live Demo:** [socialapp-mern.vercel.app](https://socialapp-mern.vercel.app)  
+**Backend API:** [socialapp-backend-acv1.onrender.com](https://socialapp-backend-acv1.onrender.com)
+
+> ⚠️ The backend runs on Render's free tier and may take 30–60 seconds to wake up on first request.
 
 ---
 
-## 🚀 Features
+## ✅ Features
 
-### 🔐 Authentication System
+### 🔐 Authentication
 
 - User Registration & Login
-- Secure password hashing using **bcryptjs**
-- JWT-based Authentication
-- Protected Routes
+- Secure password hashing with **bcryptjs**
+- JWT-based authentication
+- Protected routes
 
-### 📝 Post System
+### 👤 User Profiles
 
-- Create **text posts**
-- Upload **image posts**
-- Text + Image combined posts
-- Real-time feed updates
+- View any user's profile and their posts
+- Upload and update profile picture
+- Edit username and bio
+- Profile picture fallback with initials avatar
+
+### 📝 Posts
+
+- Create text posts, image posts, or both
+- Upload images via **Cloudinary**
+- Delete your own posts (with confirmation modal)
+- Real-time feed updates without page refresh
 
 ### ❤️ Like System
 
 - Like / Unlike posts
-- Dynamic like counter
-- Multi-user interaction support
+- Live like counter
+- Multi-user support
 
-### 💬 Comment System
+### 💬 Comments
 
-- Add comments to posts
-- Real-time comment updates
-- Multi-user comments support
+- Add comments to any post
+- Collapsible comment section per post
+- Submit via button or Enter key
+- Multi-user comment support
 
-### ☁️ Cloudinary Integration
+### 👥 Follow System
 
-- Image uploads using **Cloudinary**
-- Secure cloud image storage
+- Follow / Unfollow other users
+- Live follower and following count updates
+- Follow button hidden on your own posts
 
-### 📱 Responsive UI
+### 🎨 UI/UX
 
-- Clean modern UI
-- Mobile-friendly design
-- Toast notifications for better UX
+- Clean, modern design with **Tailwind CSS**
+- Fully responsive layout
+- Toast notifications for all user actions
+- Custom delete confirmation modal
+- Profile pictures shown beside usernames in the feed
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-
-- ⚛️ React.js
-- 🎨 Tailwind CSS
-- 🔄 Axios
-- 🧭 React Router DOM
-- 🔔 React Hot Toast
-
-### Backend
-
-- 🟢 Node.js
-- 🚀 Express.js
-- 🍃 MongoDB Atlas
-- 📦 Mongoose
-- 🔑 JWT Authentication
-- 🔒 bcryptjs
-- ☁️ Cloudinary
-- 📤 Multer
-
----
-
-## 📸 Features Preview
-
-✅ User Authentication  
-✅ Create Posts  
-✅ Upload Images  
-✅ Like / Unlike Posts  
-✅ Comment System  
-✅ Real-time Feed  
-✅ Multi-user Interaction
+| Layer         | Technology                                                       |
+| ------------- | ---------------------------------------------------------------- |
+| Frontend      | React.js, Tailwind CSS, React Router DOM, Axios, React Hot Toast |
+| Backend       | Node.js, Express.js                                              |
+| Database      | MongoDB Atlas, Mongoose                                          |
+| Auth          | JWT, bcryptjs                                                    |
+| Image Storage | Cloudinary, Multer                                               |
+| Deployment    | Vercel (frontend), Render (backend)                              |
 
 ---
 
 ## 📂 Project Structure
 
-```bash
+```
 SocialApp/
-│── client/        # React Frontend
-│── server/        # Express Backend
-│── README.md
+├── client/                  # React frontend
+│   └── src/
+│       ├── pages/           # Home, Login, Register, Profile
+│       ├── components/      # Navbar
+│       └── services/        # Axios API instance
+└── server/                  # Express backend
+    └── src/
+        ├── controllers/     # authController, postController
+        ├── middleware/       # authMiddleware, uploadMiddleware
+        ├── models/          # User, Post
+        └── routes/          # authRoutes, postRoutes
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Local Setup
 
-### 1️⃣ Clone Repository
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/socialapp-mern.git
+git clone https://github.com/SBR2006V/socialapp-mern.git
 cd socialapp-mern
 ```
 
----
-
-### 2️⃣ Install Dependencies
-
-#### Client
+### 2. Install Dependencies
 
 ```bash
+# Frontend
 cd client
 npm install
-```
 
-#### Server
-
-```bash
-cd server
+# Backend
+cd ../server
 npm install
 ```
 
----
+### 3. Configure Environment Variables
 
-### 3️⃣ Setup Environment Variables
-
-Create a `.env` file inside the **server** folder.
-
-Example:
+Create a `.env` file inside the `server/` folder:
 
 ```env
 PORT=5000
-
-MONGO_URI=your_mongodb_uri
-
-JWT_SECRET=your_secret_key
-
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
----
+Create a `.env` file inside the `client/` folder:
 
-### 4️⃣ Run Project
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
-#### Start Backend
+### 4. Run the Project
 
 ```bash
-cd server
+# Start backend (from /server)
+npm run dev
+
+# Start frontend (from /client)
 npm run dev
 ```
 
-#### Start Frontend
-
-```bash
-cd client
-npm run dev
-```
+Frontend runs on `http://localhost:5173`  
+Backend runs on `http://localhost:5000`
 
 ---
 
-## 🌍 Future Improvements
+## 🔮 Planned Features
 
-- 👤 User Profile Page
-- ➕ Follow / Unfollow System
-- 🖼️ Profile Picture Upload
-- 📩 Messaging System
-- 🔍 Search Users
-
----
-
-## Live Demo
-
-Frontend:
-https://socialapp-mern.vercel.app/
-
-Backend API:
-https://socialapp-backend-acv1.onrender.com
-
-## 🤝 Contributing
-
-Contributions are welcome!  
-Feel free to fork the project and improve it.
+- 🔍 Search users
+- 🔔 Notifications (likes, comments, follows)
+- 📩 Direct messaging
+- ⏱️ Post timestamps ("2 hours ago")
+- ✏️ Edit post after publishing
+- 📄 Infinite scroll / pagination
 
 ---
 
 ## 📜 License
 
-This project is built for learning and educational purposes.
+Built for learning and educational purposes.
 
 ---
 
 ## 👨‍💻 Developer
 
-Built with ❤️ by **Sourasish Biswas**
+Built with ❤️ by **Sourasish Biswas**  
+[GitHub](https://github.com/SBR2006V)
